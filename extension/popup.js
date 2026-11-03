@@ -1,0 +1,50 @@
+// The picker. Writes { id, look } to chrome.storage.local under "wt"; theme.js on claude.ai paints it live.
+const KEY = 'wt', LOOK = { motion: 'grid', speed: 4, cell: 14, veil: .4 };
+const CHOICES = {
+  motion: [['grid', 'Cell by cell'], ['smooth', 'Smooth']],
+  speed: [1, 2, 4, 8, 16].map(v => [v, `${v}x`]),
+  cell: [[14, 'S'], [18, 'M'], [22, 'L']],
+  veil: [0, .2, .4, .6, .8].map(v => [v, `${v * 100}%`]),
+};
+const $ = id => document.getElementById(id);
+let state = { id: 'claude', look: { ...LOOK } };
+const save = () => chrome.storage.local.set({ [KEY]: state });
+
+const tile = t => {
+  const b = document.createElement('button');
+  const live = !!t.wallpaper;
+  b.className = 'tile' + (live ? '' : ' color') + (t.id === state.id ? ' on' : '');
+  b.style.background = t.vars?.['wall-sky'] ?? (t.bg ? `linear-gradient(135deg, ${t.bg}, ${t.bg} 55%, ${t.accent})` : '#3a3835');
+  b.style.setProperty('--a', t.accent ?? '#d97757');
+  b.title = t.tagline;
+  b.innerHTML = '<i class="dot"></i><span class="label"></span>';
+  b.querySelector('.label').textContent = t.name;
+  b.onclick = () => { state = { ...state, id: t.id }; save(); draw(); };
+  return b;
+};
+
+const draw = () => {
+  const cur = THEMES.find(t => t.id === state.id) ?? THEMES[0];
+  $('walls').replaceChildren(...THEMES.filter(t => t.wallpaper).map(tile));
+  $('colors').replaceChildren(...THEMES.filter(t => !t.wallpaper).map(tile));
+  $('now').textContent = cur.id === 'claude' ? 'Using the site\'s own look' : `${cur.name}: ${cur.tagline}`;
+  $('off').style.visibility = cur.id === 'claude' ? 'hidden' : 'visible';
+  $('look').hidden = !cur.wallpaper;
+  document.documentElement.style.setProperty('--accent', cur.accent ?? '#d97757');
+  for (const seg of document.querySelectorAll('.seg')) {
+    const k = seg.dataset.key;
+    seg.replaceChildren(...CHOICES[k].map(([v, label]) => {
+      const b = document.createElement('button');
+      b.textContent = label;
+      b.className = state.look[k] === v ? 'on' : '';
+      b.onclick = () => { state = { ...state, look: { ...state.look, [k]: v } }; save(); draw(); };
+      return b;
+    }));
+  }
+};
+
+$('off').onclick = () => { state = { ...state, id: 'claude' }; save(); draw(); };
+chrome.storage.local.get(KEY, r => {
+  if (r[KEY]) state = { id: r[KEY].id, look: { ...LOOK, ...r[KEY].look } };
+  draw();
+});

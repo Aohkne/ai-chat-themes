@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>AI Chat Themes</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <img src="icons/48.png" alt="" width="36" height="36">
+    <div>
+      <h1>AI Chat Themes</h1>
+      <p id="now">Claude · ChatGPT · Gemini</p>
+    </div>
+    <button id="off" title="Back to the site's own look">Reset</button>
+  </header>
+
+  <h2>Live wallpapers</h2>
+  <div class="grid" id="walls"></div>
+
+  <h2>Colors</h2>
+  <div class="grid" id="colors"></div>
+
+  <section id="look">
+    <h2>Wallpaper</h2>
+    <div class="row"><span>Motion</span><div class="seg" data-key="motion"></div></div>
+    <div class="row"><span>Speed</span><div class="seg" data-key="speed"></div></div>
+    <div class="row"><span>Cell size</span><div class="seg" data-key="cell"></div></div>
+    <div class="row"><span>Backdrop</span><div class="seg" data-key="veil"></div></div>
+  </section>
+
+  <footer>Made by <b>Aohkne</b> · changes apply live</footer>
+  <script src="themes.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
