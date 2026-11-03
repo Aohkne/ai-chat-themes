@@ -1,0 +1,11 @@
+{
+  "name": "ai-chat-themes",
+  "version": "0.1.0",
+  "description": "Color themes and live ASCII wallpapers for Claude, ChatGPT and Gemini, as a browser extension",
+  "author": "Aohkne",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "node tools/build.mjs"
+  }
+}

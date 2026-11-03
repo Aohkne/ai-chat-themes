@@ -1,0 +1,10 @@
+node_modules/
+demo/out/frames/
+demo/out/*.raw
+.DS_Store
+# the demo folder stays local: only the preview gif and the small mp4 are published
+/demo/*
+!/demo/out/
+/demo/out/*
+!/demo/out/preview.gif
+!/demo/out/ai-chat-themes-demo-small.mp4
