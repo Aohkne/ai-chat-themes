@@ -281,7 +281,7 @@ const extras = o => {
 };
 let last;
 const sync = s => {
-  const on = !(Array.isArray(s?.off) && s.off.includes(SITE.id));
+  const on = Array.isArray(s?.off) ? !s.off.includes(SITE.id) : !SITE.optIn;
   extras(on ? s?.[SITE.id] : undefined);
   const key = JSON.stringify(on ? [s?.id, s?.look] : null); // (toggling another site repaints nothing here)
   if (key === last) return;

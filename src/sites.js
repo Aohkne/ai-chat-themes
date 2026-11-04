@@ -5,6 +5,7 @@
 //   vars(c)   the site's own color variables for a palette c (see core.js, paletteOf); [name, value] pairs
 //   hide      selectors that must turn transparent for a wallpaper to show
 //   halo      selectors of the message text, given a soft outline for reading over a wallpaper
+//   optIn     off until the person ticks it in the popup (optional)
 //   wallCss   extra CSS for a wallpaper (optional)
 //   extras(o) CSS for the site's own popup options o (optional), applied with or without a theme
 //   mode(m)   makes the page's own light/dark switch follow the theme ('dark', 'light', or undefined to give it back)
@@ -102,7 +103,7 @@ const SITES = [
     mode: m => flipClass(document.body, 'dark-theme', 'light-theme', m),
   },
   {
-    id: 'zalo', hosts: ['chat.zalo.me'],
+    id: 'zalo', hosts: ['chat.zalo.me'], optIn: true,
     // #sidebarNav holds the icon rail (#main-tab) and the conversation list; the chat itself is <main>
     sidebar: '#sidebarNav', composer: '#chat-box-input-container-id',
     hide: 'body, #app, #app-page, #container, main, #header, #chatViewContainer, #chatView, '

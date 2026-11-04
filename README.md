@@ -18,7 +18,7 @@ Made by **Aohkne**. The idea comes from a post by Marko Vineli (see [Thanks](#th
 - **5 color themes:** Sunset Cloud, Sakura, Terminal, Night Sea, Old Paper.
 - Choose **Default** (or the Reset button) to go back to the site's own look.
 - With a wallpaper, the sidebar becomes frosted glass so the wallpaper shows through.
-- Turn the theme off per site from the **Sites** list in the popup.
+- Turn the theme off per site from the **Sites** list in the popup. Zalo is off until you tick it there.
 - Zalo options in the popup: hide avatars, dim images and stickers (hover shows them in full), see-through message bubbles. They work with or without a theme.
 - Wallpaper settings: motion (smooth or cell by cell), speed, cell size, and the backdrop behind the chat box.
 

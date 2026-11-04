@@ -11,7 +11,9 @@ const SITES = { 'ai-sites': [['claude', 'Claude'], ['chatgpt', 'ChatGPT'], ['gem
 // options of one site, stored under its id (see extras in src/sites.js)
 const OPTIONS = { zalo: [['hideAvatars', 'Hide avatars'], ['dimImages', 'Dim images'], ['dimStickers', 'Dim stickers'], ['clearBubbles', 'See-through bubbles']] };
 const $ = id => document.getElementById(id);
-let state = { id: 'claude', look: { ...LOOK }, off: [] };
+// opt-in sites (optIn in src/sites.js) start off
+const OFF = ['zalo'];
+let state = { id: 'claude', look: { ...LOOK }, off: OFF };
 const save = () => chrome.storage.local.set({ [KEY]: state });
 
 const tile = t => {
@@ -71,6 +73,6 @@ const draw = () => {
 
 $('off').onclick = () => { state = { ...state, id: 'claude' }; save(); draw(); };
 chrome.storage.local.get(KEY, r => {
-  if (r[KEY]) state = { ...r[KEY], look: { ...LOOK, ...r[KEY].look }, off: Array.isArray(r[KEY].off) ? r[KEY].off : [] };
+  if (r[KEY]) state = { ...r[KEY], look: { ...LOOK, ...r[KEY].look }, off: Array.isArray(r[KEY].off) ? r[KEY].off : OFF };
   draw();
 });
