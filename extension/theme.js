@@ -67,6 +67,7 @@
   //   vars(c)   the site's own color variables for a palette c (see core.js, paletteOf); [name, value] pairs
   //   hide      selectors that must turn transparent for a wallpaper to show
   //   halo      selectors of the message text, given a soft outline for reading over a wallpaper
+  //   wallCss   extra CSS for a wallpaper (optional)
   //   mode(m)   makes the page's own light/dark switch follow the theme ('dark', 'light', or undefined to give it back)
   // The selectors and variable names are best effort against each site's DOM, which is not ours: when a site
   // changes, this file is where to look.
@@ -161,6 +162,48 @@
       fonts: ['gem-sys-typescale-font-family', 'google-sans'],
       mode: m => flipClass(document.body, 'dark-theme', 'light-theme', m),
     },
+    {
+      id: 'zalo', hosts: ['chat.zalo.me'],
+      // #sidebarNav holds the icon rail (#main-tab) and the conversation list; the chat itself is <main>
+      sidebar: '#sidebarNav', composer: '#chat-box-input-container-id',
+      hide: 'body, #app, #app-page, #container, main, #header, #chatViewContainer, #chatView, '
+        + '#chat-box-bar-id, #chatInput, [class*=message-view__blur__overlay]',
+      halo: '.text-message__container',
+      // the conversation list paints every row with the page color: clear the rows (keeping hover and selection)
+      // so the sidebar's glass shows the wallpaper like the chat side
+      wallCss: `
+  #sidebarNav .msg-item, #sidebarNav .msg-filters-bar,
+  #sidebarNav .conv-item:not(:hover):not([class*=selected]):not([class*=active]) { background: transparent !important; }
+  #sidebarNav .conv-item:hover:not([class*=selected]):not([class*=active]) { background: color-mix(in srgb, var(--layer-background-hover) 55%, transparent) !important; }
+  #sidebarNav #contact-search-input { background: color-mix(in srgb, var(--input-field-bg-filled) 55%, transparent) !important; }`,
+      vars: c => {
+        // Zalo's design tokens (same names in its light and dark sets, on <body>; dark is body.dark)
+        const page = c.bg, side = c.s1, box = c.s2;
+        return Object.entries({
+          'surface-background': side, 'surface-alt': page, 'surface-background-subtle': page, 'surface-background-overlay': page,
+          'layer-background': page, 'layer-background-CSC': page, 'layer-background-subtle': side, 'bg-default': page,
+          'layer-background-navbar-normal': side, 'layer-background-navbar-sublevel-normal': page,
+          'layer-background-leftmenu': side, 'layer-background-hover': c.s2, 'layer-background-leftmenu-hover': c.s2,
+          'layer-background-navbar-hover': c.s2, 'layer-background-navbar-sublevel-hover': c.s2,
+          'layer-background-selected': c.tint, 'layer-background-leftmenu-selected': c.tint,
+          'layer-background-navbar-selected': c.tint, 'layer-background-navbar-sublevel-selected': c.tint,
+          'blue-message': c.tint, 'blue-message-selected': c.tint, 'layer-accent-message': c.tint,
+          'white-message': box, 'white-message-selected': c.s3, 'white-quote': c.s3, 'white-quote-selected': c.s3,
+          'input-field-bg-filled': box, 'input-field-bg-outline': box,
+          'input-field-bg-filled-hover': c.s3, 'input-field-bg-outline-hover': c.s3,
+          'text-primary': c.text, 'icon-primary': c.text, 'text-navbar-sublevel-normal': c.text, 'text-navbar-sublevel-selected': c.text,
+          'text-secondary': c.second, 'icon-secondary': c.second, 'tab-txt': c.second, 'icon-navbar-normal': c.second,
+          'text-placeholder': c.muted, 'text-disabled': c.muted,
+          'text-information': c.accent, 'text-mention': c.accent, 'link': c.accent, 'border-focused': c.accent,
+          'icon-navbar-sublevel-normal': c.accent, 'icon-navbar-sublevel-selected': c.accent,
+          'button-primary-normal': c.accent, 'button-primary-hover': c.hover, 'button-primary-pressed': c.hover,
+          'button-primary-text': c.on,
+          'border': c.line, 'border-subtle': c.line,
+        });
+      },
+      fonts: [],
+      mode: m => flipClass(document.body, 'dark', 'light', m),
+    },
   ];
 
   const SITE = SITES.find(s => s.hosts.some(h => location.hostname === h || location.hostname.endsWith(`.${h}`))) ?? SITES[0];
@@ -177,6 +220,7 @@
   ${SITE.halo} { text-shadow: 0 0 3px var(--wall-halo), 0 0 6px var(--wall-halo), 0 0 10px var(--wall-halo); }
   ${SITE.composer} { background: var(--wall-glass) !important; backdrop-filter: blur(6px); }
   [data-wt-clear] { background: transparent !important; background-image: none !important; }
+  ${SITE.wallCss ?? ''}
   [data-wt-glass] { background: transparent !important; }
   [data-wt-glass=root] {
     background: var(--wall-glass) !important; border-right: 1px solid var(--wall-rim) !important;
@@ -185,7 +229,7 @@
   ` : ''}`;
 
   // Content script for the chat sites (sites.js). Reads the picked theme from chrome.storage.local (key "wt"), written by the popup:
-  // { id, look: { motion, speed, cell, veil } }. <html data-theme="<id>"> while a theme is on.
+  // { id, look: { motion, speed, cell, veil }, off: [site ids] }. <html data-theme="<id>"> while a theme is on.
   const root = document.documentElement;
 
   const ok = c => /^#[0-9a-f]{6}$/i.test(c);
@@ -1352,7 +1396,8 @@
     painted = true;
   };
 
-  // The picked theme comes from the popup through chrome.storage.local; a theme is a THEMES entry plus its look
+  // The picked theme comes from the popup through chrome.storage.local; a theme is a THEMES entry plus its look.
+  // Sites listed in `off` keep their own look
   const LOOK = { motion: 'grid', speed: 4, cell: 14, veil: .4 };
   const resolve = s => {
     const base = THEMES.find(t => t.id === s?.id);
@@ -1360,10 +1405,11 @@
   };
   let last;
   const sync = s => {
-    const key = JSON.stringify(s ?? null);
+    const on = !(Array.isArray(s?.off) && s.off.includes(SITE.id));
+    const key = JSON.stringify(on ? [s?.id, s?.look] : null); // (toggling another site repaints nothing here)
     if (key === last) return;
     last = key;
-    const t = resolve(s);
+    const t = on ? resolve(s) : {};
     apply(t.bg ? { ...t, css: pageCss(t) } : t);
   };
   const KEY = 'wt';

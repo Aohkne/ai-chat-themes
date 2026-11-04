@@ -264,7 +264,8 @@ const apply = t => {
   painted = true;
 };
 
-// The picked theme comes from the popup through chrome.storage.local; a theme is a THEMES entry plus its look
+// The picked theme comes from the popup through chrome.storage.local; a theme is a THEMES entry plus its look.
+// Sites listed in `off` keep their own look
 const LOOK = { motion: 'grid', speed: 4, cell: 14, veil: .4 };
 const resolve = s => {
   const base = THEMES.find(t => t.id === s?.id);
@@ -272,10 +273,11 @@ const resolve = s => {
 };
 let last;
 const sync = s => {
-  const key = JSON.stringify(s ?? null);
+  const on = !(Array.isArray(s?.off) && s.off.includes(SITE.id));
+  const key = JSON.stringify(on ? [s?.id, s?.look] : null); // (toggling another site repaints nothing here)
   if (key === last) return;
   last = key;
-  const t = resolve(s);
+  const t = on ? resolve(s) : {};
   apply(t.bg ? { ...t, css: pageCss(t) } : t);
 };
 const KEY = 'wt';
