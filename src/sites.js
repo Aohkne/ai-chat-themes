@@ -6,6 +6,7 @@
 //   hide      selectors that must turn transparent for a wallpaper to show
 //   halo      selectors of the message text, given a soft outline for reading over a wallpaper
 //   wallCss   extra CSS for a wallpaper (optional)
+//   extras(o) CSS for the site's own popup options o (optional), applied with or without a theme
 //   mode(m)   makes the page's own light/dark switch follow the theme ('dark', 'light', or undefined to give it back)
 // The selectors and variable names are best effort against each site's DOM, which is not ours: when a site
 // changes, this file is where to look.
@@ -140,6 +141,21 @@ const SITES = [
       });
     },
     fonts: [],
+    extras: o => [
+      o.hideAvatars && '.zavatar-container { display: none !important; }',
+      // images become a dark, blurred trace in their bubble, stickers fade; hovering one shows it in full
+      // (without Zalo's own dark hover layer, which also sits over the image)
+      o.dimImages && `#chatView .img-center-box { background: transparent !important; }
+#chatView :is(img.zimg-el, video) { filter: grayscale(1) brightness(.3) blur(6px); opacity: .6; transition: filter .25s, opacity .25s; }
+#chatView .chat-message-picture__photooverlay::before { display: none !important; }
+#chatView :is(.img-center-box, .chat-message-picture__photooverlay):hover :is(img.zimg-el, video),
+#chatView :is(img.zimg-el, video):hover { filter: none; opacity: 1; }`,
+      o.dimStickers && `#chatView .sticker { opacity: .4; transition: opacity .25s; }
+#chatView .sticker:hover { opacity: 1; }`,
+      // message bubbles at half opacity, so the background shows through
+      o.clearBubbles && `#chatView .message-frame.card { background-color: color-mix(in srgb, var(--white-message) 50%, transparent) !important; }
+#chatView .message-frame.card.me { background-color: color-mix(in srgb, var(--blue-message) 50%, transparent) !important; }`,
+    ].filter(Boolean).join('\n'),
     mode: m => flipClass(document.body, 'dark', 'light', m),
   },
 ];

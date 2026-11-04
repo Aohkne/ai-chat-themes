@@ -4,7 +4,7 @@ Color themes and **live ASCII wallpapers** for [Claude](https://claude.ai), [Cha
 
 Made by **Aohkne**. The idea comes from a post by Marko Vineli (see [Thanks](#thanks)). This is an unofficial project, not affiliated with Anthropic, OpenAI, Google or VNG (Zalo).
 
-> **Status: experimental (v0.4.0).** Tested on Claude, ChatGPT, Gemini and Zalo. These sites change their pages often, so selectors may need updating over time.
+> **Status: experimental (v0.5.0).** Tested on Claude, ChatGPT, Gemini and Zalo. These sites change their pages often, so selectors may need updating over time.
 
 ## Demo
 
@@ -19,6 +19,7 @@ Made by **Aohkne**. The idea comes from a post by Marko Vineli (see [Thanks](#th
 - Choose **Default** (or the Reset button) to go back to the site's own look.
 - With a wallpaper, the sidebar becomes frosted glass so the wallpaper shows through.
 - Turn the theme off per site from the **Sites** list in the popup.
+- Zalo options in the popup: hide avatars, dim images and stickers (hover shows them in full), see-through message bubbles. They work with or without a theme.
 - Wallpaper settings: motion (smooth or cell by cell), speed, cell size, and the backdrop behind the chat box.
 
 ## Install (Chrome, Edge, Brave)

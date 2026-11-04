@@ -271,9 +271,18 @@ const resolve = s => {
   const base = THEMES.find(t => t.id === s?.id);
   return base && base.bg ? { ...base, ...LOOK, ...s.look } : {};
 };
+// the site's own options from the popup (state[SITE.id]), in their own sheet
+const extras = o => {
+  let el = document.getElementById('desktop-theme-extras');
+  const css = (o && typeof o === 'object' && SITE.extras?.(o)) || '';
+  if (!css) return el?.remove();
+  el ??= document.head.appendChild(Object.assign(document.createElement('style'), { id: 'desktop-theme-extras' }));
+  el.textContent = css;
+};
 let last;
 const sync = s => {
   const on = !(Array.isArray(s?.off) && s.off.includes(SITE.id));
+  extras(on ? s?.[SITE.id] : undefined);
   const key = JSON.stringify(on ? [s?.id, s?.look] : null); // (toggling another site repaints nothing here)
   if (key === last) return;
   last = key;
