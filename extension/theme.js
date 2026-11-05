@@ -177,7 +177,10 @@
   #sidebarNav .msg-item, #sidebarNav .msg-filters-bar,
   #sidebarNav .conv-item:not(:hover):not([class*=selected]):not([class*=active]) { background: transparent !important; }
   #sidebarNav .conv-item:hover:not([class*=selected]):not([class*=active]) { background: color-mix(in srgb, var(--layer-background-hover) 55%, transparent) !important; }
-  #sidebarNav #contact-search-input { background: color-mix(in srgb, var(--input-field-bg-filled) 55%, transparent) !important; }`,
+  #sidebarNav #contact-search-input { background: color-mix(in srgb, var(--input-field-bg-filled) 55%, transparent) !important; }
+  /* in a narrow window an open chat (<main>) lies over the list, which only its (now clear) background hid */
+  #container:has(main) #sidebarNav.compact-mode > :has(#conversationListId),
+  #container:has(main) #sidebarNav.compact-mode > :has(#conversationListId) * { visibility: hidden !important; }`,
       vars: c => {
         // Zalo's design tokens (same names in its light and dark sets, on <body>; dark is body.dark)
         const page = c.bg, side = c.s1, box = c.s2;
