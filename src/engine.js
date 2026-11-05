@@ -1,11 +1,12 @@
 // the sidebar: a tall, narrow element, from SITE.sidebar if that finds one, else by shape: the widest such ancestor
 // of whatever sits at the window's left edge
-const tall = el => {
+// (a named one may take any share of a narrow window: Zalo's, with its icon rail, is ~410px)
+const tall = (el, most = .4) => {
   const r = el.getBoundingClientRect();
-  return r.width > 40 && r.width < innerWidth * .4 && r.height > innerHeight * .5;
+  return r.width > 40 && r.width < innerWidth * most && r.height > innerHeight * .5;
 };
 const sidebar = () => {
-  const named = [...document.querySelectorAll(SITE.sidebar)].find(tall);
+  const named = [...document.querySelectorAll(SITE.sidebar)].find(el => tall(el, 1.01));
   if (named) return named;
   let best;
   for (let el = document.elementsFromPoint(24, innerHeight / 2)[0]; el && el !== document.body && el !== root; el = el.parentElement)
@@ -264,18 +265,29 @@ const apply = t => {
   painted = true;
 };
 
-// The picked theme comes from the popup through chrome.storage.local; a theme is a THEMES entry plus its look
+// The picked theme comes from the popup through chrome.storage.local; a theme is a THEMES entry plus its look.
+// Sites listed in `off` keep their own look
 const LOOK = { motion: 'grid', speed: 4, cell: 14, veil: .4 };
 const resolve = s => {
   const base = THEMES.find(t => t.id === s?.id);
   return base && base.bg ? { ...base, ...LOOK, ...s.look } : {};
 };
+// the site's own options from the popup (state[SITE.id]), in their own sheet
+const extras = o => {
+  let el = document.getElementById('desktop-theme-extras');
+  const css = (o && typeof o === 'object' && SITE.extras?.(o)) || '';
+  if (!css) return el?.remove();
+  el ??= document.head.appendChild(Object.assign(document.createElement('style'), { id: 'desktop-theme-extras' }));
+  el.textContent = css;
+};
 let last;
 const sync = s => {
-  const key = JSON.stringify(s ?? null);
+  const on = Array.isArray(s?.off) ? !s.off.includes(SITE.id) : !SITE.optIn;
+  extras(on ? s?.[SITE.id] : undefined);
+  const key = JSON.stringify(on ? [s?.id, s?.look] : null); // (toggling another site repaints nothing here)
   if (key === last) return;
   last = key;
-  const t = resolve(s);
+  const t = on ? resolve(s) : {};
   apply(t.bg ? { ...t, css: pageCss(t) } : t);
 };
 const KEY = 'wt';

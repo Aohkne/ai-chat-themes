@@ -1,5 +1,5 @@
 // Content script for the chat sites (sites.js). Reads the picked theme from chrome.storage.local (key "wt"), written by the popup:
-// { id, look: { motion, speed, cell, veil } }. <html data-theme="<id>"> while a theme is on.
+// { id, look: { motion, speed, cell, veil }, off: [site ids], <site id>: { options } }. <html data-theme="<id>"> while a theme is on.
 const root = document.documentElement;
 
 const ok = c => /^#[0-9a-f]{6}$/i.test(c);

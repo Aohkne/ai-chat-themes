@@ -1,4 +1,4 @@
-// The picker. Writes { id, look } to chrome.storage.local under "wt"; theme.js on claude.ai paints it live.
+// The picker. Writes { id, look, off, <site id>: options } to chrome.storage.local under "wt"; theme.js on claude.ai paints it live.
 const KEY = 'wt', LOOK = { motion: 'grid', speed: 4, cell: 14, veil: .4 };
 const CHOICES = {
   motion: [['grid', 'Cell by cell'], ['smooth', 'Smooth']],
@@ -6,8 +6,14 @@ const CHOICES = {
   cell: [[14, 'S'], [18, 'M'], [22, 'L']],
   veil: [0, .2, .4, .6, .8].map(v => [v, `${v * 100}%`]),
 };
+// the sites theme.js runs on (ids as in src/sites.js); `off` lists the ones the person turned off
+const SITES = { 'ai-sites': [['claude', 'Claude'], ['chatgpt', 'ChatGPT'], ['gemini', 'Gemini']], 'social-sites': [['zalo', 'Zalo']] };
+// options of one site, stored under its id (see extras in src/sites.js)
+const OPTIONS = { zalo: [['hideAvatars', 'Hide avatars'], ['dimImages', 'Dim images'], ['dimStickers', 'Dim stickers'], ['clearBubbles', 'See-through bubbles']] };
 const $ = id => document.getElementById(id);
-let state = { id: 'claude', look: { ...LOOK } };
+// opt-in sites (optIn in src/sites.js) start off
+const OFF = ['zalo'];
+let state = { id: 'claude', look: { ...LOOK }, off: OFF };
 const save = () => chrome.storage.local.set({ [KEY]: state });
 
 const tile = t => {
@@ -23,6 +29,16 @@ const tile = t => {
   return b;
 };
 
+const check = (name, checked, change) => {
+  const row = document.createElement('label'), box = document.createElement('input');
+  row.className = 'site';
+  box.type = 'checkbox';
+  box.checked = checked;
+  box.onchange = () => change(box.checked);
+  row.append(box, name);
+  return row;
+};
+
 const draw = () => {
   const cur = THEMES.find(t => t.id === state.id) ?? THEMES[0];
   $('walls').replaceChildren(...THEMES.filter(t => t.wallpaper).map(tile));
@@ -31,6 +47,18 @@ const draw = () => {
   $('off').style.visibility = cur.id === 'claude' ? 'hidden' : 'visible';
   $('look').hidden = !cur.wallpaper;
   document.documentElement.style.setProperty('--accent', cur.accent ?? '#d97757');
+  for (const [list, sites] of Object.entries(SITES)) $(list).replaceChildren(...sites.map(([id, name]) => check(name, !state.off.includes(id), on => {
+    state = { ...state, off: on ? state.off.filter(x => x !== id) : [...state.off, id] };
+    save();
+    draw();
+  })));
+  for (const [site, opts] of Object.entries(OPTIONS)) {
+    $(site).hidden = state.off.includes(site);
+    $(`${site}-opts`).replaceChildren(...opts.map(([k, name]) => check(name, !!state[site]?.[k], on => {
+      state = { ...state, [site]: { ...state[site], [k]: on } };
+      save();
+    })));
+  }
   for (const seg of document.querySelectorAll('.seg')) {
     const k = seg.dataset.key;
     seg.replaceChildren(...CHOICES[k].map(([v, label]) => {
@@ -45,6 +73,6 @@ const draw = () => {
 
 $('off').onclick = () => { state = { ...state, id: 'claude' }; save(); draw(); };
 chrome.storage.local.get(KEY, r => {
-  if (r[KEY]) state = { id: r[KEY].id, look: { ...LOOK, ...r[KEY].look } };
+  if (r[KEY]) state = { ...r[KEY], look: { ...LOOK, ...r[KEY].look }, off: Array.isArray(r[KEY].off) ? r[KEY].off : OFF };
   draw();
 });

@@ -67,6 +67,9 @@
   //   vars(c)   the site's own color variables for a palette c (see core.js, paletteOf); [name, value] pairs
   //   hide      selectors that must turn transparent for a wallpaper to show
   //   halo      selectors of the message text, given a soft outline for reading over a wallpaper
+  //   optIn     off until the person ticks it in the popup (optional)
+  //   wallCss   extra CSS for a wallpaper (optional)
+  //   extras(o) CSS for the site's own popup options o (optional), applied with or without a theme
   //   mode(m)   makes the page's own light/dark switch follow the theme ('dark', 'light', or undefined to give it back)
   // The selectors and variable names are best effort against each site's DOM, which is not ours: when a site
   // changes, this file is where to look.
@@ -161,6 +164,66 @@
       fonts: ['gem-sys-typescale-font-family', 'google-sans'],
       mode: m => flipClass(document.body, 'dark-theme', 'light-theme', m),
     },
+    {
+      id: 'zalo', hosts: ['chat.zalo.me'], optIn: true,
+      // #sidebarNav holds the icon rail (#main-tab) and the conversation list; the chat itself is <main>
+      sidebar: '#sidebarNav', composer: '#chat-box-input-container-id',
+      hide: 'body, #app, #app-page, #container, main, #header, #chatViewContainer, #chatView, '
+        + '#chat-box-bar-id, #chatInput, [class*=message-view__blur__overlay]',
+      halo: '.text-message__container',
+      // the conversation list paints every row with the page color: clear the rows (keeping hover and selection)
+      // so the sidebar's glass shows the wallpaper like the chat side
+      wallCss: `
+  #sidebarNav .msg-item, #sidebarNav .msg-filters-bar,
+  #sidebarNav .conv-item:not(:hover):not([class*=selected]):not([class*=active]) { background: transparent !important; }
+  #sidebarNav .conv-item:hover:not([class*=selected]):not([class*=active]) { background: color-mix(in srgb, var(--layer-background-hover) 55%, transparent) !important; }
+  #sidebarNav #contact-search-input { background: color-mix(in srgb, var(--input-field-bg-filled) 55%, transparent) !important; }
+  /* in a narrow window an open chat (<main>) lies over the list, which only its (now clear) background hid */
+  #container:has(main) #sidebarNav.compact-mode > :has(#conversationListId),
+  #container:has(main) #sidebarNav.compact-mode > :has(#conversationListId) * { visibility: hidden !important; }`,
+      vars: c => {
+        // Zalo's design tokens (same names in its light and dark sets, on <body>; dark is body.dark)
+        const page = c.bg, side = c.s1, box = c.s2;
+        return Object.entries({
+          'surface-background': side, 'surface-alt': page, 'surface-background-subtle': page, 'surface-background-overlay': page,
+          'layer-background': page, 'layer-background-CSC': page, 'layer-background-subtle': side, 'bg-default': page,
+          'layer-background-navbar-normal': side, 'layer-background-navbar-sublevel-normal': page,
+          'layer-background-leftmenu': side, 'layer-background-hover': c.s2, 'layer-background-leftmenu-hover': c.s2,
+          'layer-background-navbar-hover': c.s2, 'layer-background-navbar-sublevel-hover': c.s2,
+          'layer-background-selected': c.tint, 'layer-background-leftmenu-selected': c.tint,
+          'layer-background-navbar-selected': c.tint, 'layer-background-navbar-sublevel-selected': c.tint,
+          'blue-message': c.tint, 'blue-message-selected': c.tint, 'layer-accent-message': c.tint,
+          'white-message': box, 'white-message-selected': c.s3, 'white-quote': c.s3, 'white-quote-selected': c.s3,
+          'input-field-bg-filled': box, 'input-field-bg-outline': box,
+          'input-field-bg-filled-hover': c.s3, 'input-field-bg-outline-hover': c.s3,
+          'text-primary': c.text, 'icon-primary': c.text, 'text-navbar-sublevel-normal': c.text, 'text-navbar-sublevel-selected': c.text,
+          'text-secondary': c.second, 'icon-secondary': c.second, 'tab-txt': c.second, 'icon-navbar-normal': c.second,
+          'text-placeholder': c.muted, 'text-disabled': c.muted,
+          'text-information': c.accent, 'text-mention': c.accent, 'link': c.accent, 'border-focused': c.accent,
+          'icon-navbar-sublevel-normal': c.accent, 'icon-navbar-sublevel-selected': c.accent,
+          'button-primary-normal': c.accent, 'button-primary-hover': c.hover, 'button-primary-pressed': c.hover,
+          'button-primary-text': c.on,
+          'border': c.line, 'border-subtle': c.line,
+        });
+      },
+      fonts: [],
+      extras: o => [
+        o.hideAvatars && '.zavatar-container { display: none !important; }',
+        // images become a dark, blurred trace in their bubble, stickers fade; hovering one shows it in full
+        // (without Zalo's own dark hover layer, which also sits over the image)
+        o.dimImages && `#chatView .img-center-box { background: transparent !important; }
+  #chatView :is(img.zimg-el, video) { filter: grayscale(1) brightness(.3) blur(6px); opacity: .6; transition: filter .25s, opacity .25s; }
+  #chatView .chat-message-picture__photooverlay::before { display: none !important; }
+  #chatView :is(.img-center-box, .chat-message-picture__photooverlay):hover :is(img.zimg-el, video),
+  #chatView :is(img.zimg-el, video):hover { filter: none; opacity: 1; }`,
+        o.dimStickers && `#chatView .sticker { opacity: .4; transition: opacity .25s; }
+  #chatView .sticker:hover { opacity: 1; }`,
+        // message bubbles at half opacity, so the background shows through
+        o.clearBubbles && `#chatView .message-frame.card { background-color: color-mix(in srgb, var(--white-message) 50%, transparent) !important; }
+  #chatView .message-frame.card.me { background-color: color-mix(in srgb, var(--blue-message) 50%, transparent) !important; }`,
+      ].filter(Boolean).join('\n'),
+      mode: m => flipClass(document.body, 'dark', 'light', m),
+    },
   ];
 
   const SITE = SITES.find(s => s.hosts.some(h => location.hostname === h || location.hostname.endsWith(`.${h}`))) ?? SITES[0];
@@ -177,6 +240,7 @@
   ${SITE.halo} { text-shadow: 0 0 3px var(--wall-halo), 0 0 6px var(--wall-halo), 0 0 10px var(--wall-halo); }
   ${SITE.composer} { background: var(--wall-glass) !important; backdrop-filter: blur(6px); }
   [data-wt-clear] { background: transparent !important; background-image: none !important; }
+  ${SITE.wallCss ?? ''}
   [data-wt-glass] { background: transparent !important; }
   [data-wt-glass=root] {
     background: var(--wall-glass) !important; border-right: 1px solid var(--wall-rim) !important;
@@ -185,7 +249,7 @@
   ` : ''}`;
 
   // Content script for the chat sites (sites.js). Reads the picked theme from chrome.storage.local (key "wt"), written by the popup:
-  // { id, look: { motion, speed, cell, veil } }. <html data-theme="<id>"> while a theme is on.
+  // { id, look: { motion, speed, cell, veil }, off: [site ids], <site id>: { options } }. <html data-theme="<id>"> while a theme is on.
   const root = document.documentElement;
 
   const ok = c => /^#[0-9a-f]{6}$/i.test(c);
@@ -1088,12 +1152,13 @@
 
   // the sidebar: a tall, narrow element, from SITE.sidebar if that finds one, else by shape: the widest such ancestor
   // of whatever sits at the window's left edge
-  const tall = el => {
+  // (a named one may take any share of a narrow window: Zalo's, with its icon rail, is ~410px)
+  const tall = (el, most = .4) => {
     const r = el.getBoundingClientRect();
-    return r.width > 40 && r.width < innerWidth * .4 && r.height > innerHeight * .5;
+    return r.width > 40 && r.width < innerWidth * most && r.height > innerHeight * .5;
   };
   const sidebar = () => {
-    const named = [...document.querySelectorAll(SITE.sidebar)].find(tall);
+    const named = [...document.querySelectorAll(SITE.sidebar)].find(el => tall(el, 1.01));
     if (named) return named;
     let best;
     for (let el = document.elementsFromPoint(24, innerHeight / 2)[0]; el && el !== document.body && el !== root; el = el.parentElement)
@@ -1352,18 +1417,29 @@
     painted = true;
   };
 
-  // The picked theme comes from the popup through chrome.storage.local; a theme is a THEMES entry plus its look
+  // The picked theme comes from the popup through chrome.storage.local; a theme is a THEMES entry plus its look.
+  // Sites listed in `off` keep their own look
   const LOOK = { motion: 'grid', speed: 4, cell: 14, veil: .4 };
   const resolve = s => {
     const base = THEMES.find(t => t.id === s?.id);
     return base && base.bg ? { ...base, ...LOOK, ...s.look } : {};
   };
+  // the site's own options from the popup (state[SITE.id]), in their own sheet
+  const extras = o => {
+    let el = document.getElementById('desktop-theme-extras');
+    const css = (o && typeof o === 'object' && SITE.extras?.(o)) || '';
+    if (!css) return el?.remove();
+    el ??= document.head.appendChild(Object.assign(document.createElement('style'), { id: 'desktop-theme-extras' }));
+    el.textContent = css;
+  };
   let last;
   const sync = s => {
-    const key = JSON.stringify(s ?? null);
+    const on = Array.isArray(s?.off) ? !s.off.includes(SITE.id) : !SITE.optIn;
+    extras(on ? s?.[SITE.id] : undefined);
+    const key = JSON.stringify(on ? [s?.id, s?.look] : null); // (toggling another site repaints nothing here)
     if (key === last) return;
     last = key;
-    const t = resolve(s);
+    const t = on ? resolve(s) : {};
     apply(t.bg ? { ...t, css: pageCss(t) } : t);
   };
   const KEY = 'wt';
