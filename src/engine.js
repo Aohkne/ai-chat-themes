@@ -1,11 +1,12 @@
 // the sidebar: a tall, narrow element, from SITE.sidebar if that finds one, else by shape: the widest such ancestor
 // of whatever sits at the window's left edge
-const tall = el => {
+// (a named one may take any share of a narrow window: Zalo's, with its icon rail, is ~410px)
+const tall = (el, most = .4) => {
   const r = el.getBoundingClientRect();
-  return r.width > 40 && r.width < innerWidth * .4 && r.height > innerHeight * .5;
+  return r.width > 40 && r.width < innerWidth * most && r.height > innerHeight * .5;
 };
 const sidebar = () => {
-  const named = [...document.querySelectorAll(SITE.sidebar)].find(tall);
+  const named = [...document.querySelectorAll(SITE.sidebar)].find(el => tall(el, 1.01));
   if (named) return named;
   let best;
   for (let el = document.elementsFromPoint(24, innerHeight / 2)[0]; el && el !== document.body && el !== root; el = el.parentElement)
